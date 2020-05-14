@@ -7,7 +7,7 @@ import data.allure.AllureResult
 import data.jira.JiraResult
 import mu.KotlinLogging
 import java.io.File
-import java.util.*
+import kotlin.collections.ArrayList
 
 // Arguments
 val jiraApiKey = Key("jiraApiKey", stringType)
@@ -24,12 +24,13 @@ fun main(args: Array<String>) {
     // Set API key
     JiraApiClient.apiKey = config[jiraApiKey]
 
-    val resultsToPost = getResultsFromDirectory(config[reportDir])
+    // Set params
     val projectKey = config[projectKey]
     val cycleName = config[cycleName]
     val cycleDescription = config[cycleDescription]
     val debug = config[debug]
 
+    // Skip if debug
     if (debug) {
         log.info { "Debug mode ON. Will not post" }
         return
@@ -37,6 +38,12 @@ fun main(args: Array<String>) {
         log.info { "Debug mode OFF. Will post results" }
     }
 
+    // Get results
+    val allureResults = getResultsFromDirectory(config[reportDir])
+    val jiraResults = arrayListOf<JiraResult>()
+    allureResults.forEach { jiraResults.add(it.toJiraResult()) }
+
+    // Create TC
     val createdTestCycle =
         JiraApiClient.createTestCycle(
             projectKey,
@@ -44,10 +51,11 @@ fun main(args: Array<String>) {
             cycleDescription
         )
 
+    // Post Executions
     if (createdTestCycle != null) {
         log.info("Test Cycle ${createdTestCycle.key} created. Will post results")
-        log.info { "Results to post: ${resultsToPost.size}" }
-        postResultsToJira(projectKey, createdTestCycle.key, resultsToPost)
+        log.info { "Results to post: ${allureResults.size}" }
+        postResultsToJira(projectKey, createdTestCycle.key, jiraResults)
         log.info { "All results posted" }
     } else {
         log.info("Test Cycle not created. Will not post results")
@@ -85,17 +93,16 @@ fun postResultsToJira(projectKey: String, testCycleKey: String, resultsToPost: A
         }
     }
 
-fun getResultsFromDirectory(pathToReportDir: String): ArrayList<JiraResult> {
+fun getResultsFromDirectory(pathToReportDir: String): ArrayList<AllureResult> {
     val mapper = jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-    val resultsToPost = arrayListOf<JiraResult>()
+    val allureResults = arrayListOf<AllureResult>()
 
     File(pathToReportDir).walk().forEach {
         if (it.extension == "json" && it.nameWithoutExtension.endsWith("-result")) {
             val allureResult: AllureResult = mapper.readValue(it)
             log.debug { allureResult }
-            log.debug { allureResult.toJiraResult() }
-            resultsToPost.add(allureResult.toJiraResult())
+            allureResults.add(allureResult)
         }
     }
-    return resultsToPost
+    return allureResults
 }

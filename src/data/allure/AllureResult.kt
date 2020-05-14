@@ -16,7 +16,7 @@ data class AllureResult(
     fun toJiraResult(): JiraResult {
         var key = ""
         if (links.isNotEmpty()) {
-            val filtered = links.filter { it.name == "Issue" }
+            val filtered = links.filter { it.name == "Issue" && it.url.contains("-T")}
             if (filtered.isNotEmpty()) key = filtered[0].url
         }
         val result = when (status) {
