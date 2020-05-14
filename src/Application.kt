@@ -77,7 +77,13 @@ private fun loadConfig(args: Array<String>): Configuration {
 }
 
 fun postResultsToJira(projectKey: String, testCycleKey: String, resultsToPost: ArrayList<JiraResult>) =
-    resultsToPost.forEach { JiraApiClient.postTestExecution(projectKey, testCycleKey, it) }
+    resultsToPost.forEach {
+        if (it.testCaseKey.isNotEmpty()) {
+            JiraApiClient.postTestExecution(projectKey, testCycleKey, it)
+        } else {
+            log.error { "Test Link is missed for ${it.allureResult.fullName}" }
+        }
+    }
 
 fun getResultsFromDirectory(pathToReportDir: String): ArrayList<JiraResult> {
     val mapper = jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
