@@ -23,6 +23,7 @@ data class AllureResult(
             "failed" -> JiraCaseStatus.failed
             "skipped" -> JiraCaseStatus.notExecuted
             "passed" -> JiraCaseStatus.pass
+            "broken" -> JiraCaseStatus.failed
             else -> ""
         }
         val stackTrace = statusDetails?.trace ?: ""
