@@ -60,13 +60,13 @@ fun main(args: Array<String>) {
         log.info { "Results NOT posted ${postedResults.filter { !it.posted }.size}" }
 
         // Retry server error posts
-        log.info { "Will try to post again results with server error" }
+        log.info { "Will try to post again all results with server error" }
         val retryResults = arrayListOf<JiraApiClient.TestCasePostResult>()
         postedResults.filter { !it.posted && it.response.isServerError}.forEach {
             val result = JiraApiClient.postTestExecution(it.jiraResultRequest)
             retryResults.add(result)
         }
-        log.info { "Results NOT posted with retry ${retryResults.filter { !it.posted }.size}" }
+        log.info { "Results NOT posted after retry ${retryResults.filter { !it.posted }.size}" }
     } else {
         log.info("Test Cycle not created. Will not post results")
     }

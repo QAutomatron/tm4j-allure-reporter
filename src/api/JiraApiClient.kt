@@ -99,5 +99,5 @@ object JiraApiClient {
         val comment: String
     )
 
-    data class ErrorResponse(val message: String)
+    data class ErrorResponse(val errorCode: Int?, val message: String?)
 }
