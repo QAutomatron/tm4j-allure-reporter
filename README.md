@@ -1,9 +1,9 @@
 # tm4j-allure-reporter
-Report allure results to tm4j
+Report `allure-results` from Marathon to tm4j
 
 ### Usage:
 
-allure-results folder, test case should have `@TmsLink` to TM4J case id. 
+`allure-results` folder, test case should have `@TmsLink` with TM4J case id. 
 
 ### Run:
 ```
