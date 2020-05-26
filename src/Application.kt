@@ -2,12 +2,12 @@ import api.JiraApiClient
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.github.kittinunf.fuel.core.isServerError
 import com.natpryce.konfig.*
 import data.allure.AllureResult
 import data.jira.JiraResult
 import mu.KotlinLogging
 import java.io.File
-import kotlin.collections.ArrayList
 
 // Arguments
 val jiraApiKey = Key("jiraApiKey", stringType)
@@ -55,8 +55,18 @@ fun main(args: Array<String>) {
     if (createdTestCycle != null) {
         log.info("Test Cycle ${createdTestCycle.key} created. Will post results")
         log.info { "Results to post: ${allureResults.size}" }
-        postResultsToJira(projectKey, createdTestCycle.key, jiraResults)
-        log.info { "All results posted" }
+        val postedResults = postResultsToJira(projectKey, createdTestCycle.key, jiraResults)
+        log.info { "Results posted ${postedResults.filter { it.posted }.size}" }
+        log.info { "Results NOT posted ${postedResults.filter { !it.posted }.size}" }
+
+        // Retry server error posts
+        log.info { "Will try to post again results with server error" }
+        val retryResults = arrayListOf<JiraApiClient.TestCasePostResult>()
+        postedResults.filter { !it.posted && it.response.isServerError}.forEach {
+            val result = JiraApiClient.postTestExecution(it.jiraResultRequest)
+            retryResults.add(result)
+        }
+        log.info { "Results NOT posted with retry ${retryResults.filter { !it.posted }.size}" }
     } else {
         log.info("Test Cycle not created. Will not post results")
     }
@@ -84,14 +94,21 @@ private fun loadConfig(args: Array<String>): Configuration {
     return config
 }
 
-fun postResultsToJira(projectKey: String, testCycleKey: String, resultsToPost: ArrayList<JiraResult>) =
+/**
+ * Post results to Jira. Return array of not posted.
+ */
+fun postResultsToJira(projectKey: String, testCycleKey: String, resultsToPost: ArrayList<JiraResult>): ArrayList<JiraApiClient.TestCasePostResult> {
+    val postedResults = arrayListOf<JiraApiClient.TestCasePostResult>()
     resultsToPost.forEach {
         if (it.testCaseKey.isNotEmpty()) {
-            JiraApiClient.postTestExecution(projectKey, testCycleKey, it)
+            val result = JiraApiClient.postTestExecution(projectKey, testCycleKey, it)
+            postedResults.add(result)
         } else {
             log.error { "Test Link is missed for ${it.allureResult.fullName}" }
         }
     }
+    return postedResults
+}
 
 fun getResultsFromDirectory(pathToReportDir: String): ArrayList<AllureResult> {
     val mapper = jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)

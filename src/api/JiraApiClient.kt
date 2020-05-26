@@ -2,10 +2,12 @@ package api
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.kittinunf.fuel.Fuel
+import com.github.kittinunf.fuel.core.Response
 import com.github.kittinunf.fuel.core.extensions.authentication
 import com.github.kittinunf.fuel.core.extensions.jsonBody
 import com.github.kittinunf.fuel.core.isClientError
 import com.github.kittinunf.fuel.core.isServerError
+import com.github.kittinunf.fuel.core.isSuccessful
 import data.jira.JiraResult
 import mu.KotlinLogging
 
@@ -18,32 +20,39 @@ object JiraApiClient {
 
     fun postTestExecution(projectKey: String, testCycleKey: String, jiraResult: JiraResult): TestCasePostResult {
 
-        val jsonAsMap = hashMapOf(
-            "projectKey" to projectKey,
-            "testCaseKey" to jiraResult.testCaseKey,
-            "testCycleKey" to testCycleKey,
-            "statusName" to jiraResult.statusName,
-            "executionTime" to jiraResult.executionTime,
-            "environmentName" to jiraResult.environmentName,
-            "actualEndDate" to jiraResult.actualEndDate,
-            "comment" to jiraResult.comment
+        val jiraResultRequest = JiraResultRequest(
+            projectKey = projectKey,
+            testCaseKey = jiraResult.testCaseKey,
+            testCycleKey = testCycleKey,
+            statusName = jiraResult.statusName,
+            executionTime = jiraResult.executionTime,
+            environmentName = jiraResult.environmentName,
+            actualEndDate = jiraResult.actualEndDate,
+            comment = jiraResult.comment
         )
 
+        return postTestExecution(jiraResultRequest)
+    }
+
+    fun postTestExecution(jiraResultRequest: JiraResultRequest): TestCasePostResult {
         val (_, response, _) = Fuel.post("$api/testexecutions")
             .authentication().bearer(apiKey)
-            .jsonBody(mapper.writeValueAsString(jsonAsMap))
+            .jsonBody(mapper.writeValueAsString(jiraResultRequest))
             .response()
+        return handleJiraResultResponse(response, jiraResultRequest)
+    }
 
-        return if (response.isClientError || response.isServerError) {
-            val error = response.body().asString(contentType)
-            log.error { "Report not posted: ${jiraResult.testCaseKey} <${jiraResult.statusName}>." +
-                    "\n Error: $error" +
-                    "\n Allure result: ${jiraResult.allureResult}" }
-            TestCasePostResult(false, error)
-        } else {
-            log.info { "Report posted: ${jiraResult.testCaseKey} <${jiraResult.statusName}>" }
-            TestCasePostResult(true, null)
+    private fun handleJiraResultResponse(
+        response: Response,
+        jiraResultRequest: JiraResultRequest
+    ): TestCasePostResult {
+        val result = TestCasePostResult(response, jiraResultRequest)
+        log.info {
+            "Report posted status <${result.posted}>. " +
+                    "\n Code ${result.response.statusCode}: ${result.jiraResultRequest.testCaseKey} <${result.jiraResultRequest.statusName}>." +
+                    "\n Error: ${result.error}"
         }
+        return result
     }
 
     fun createTestCycle(projectKey: String, name: String, description: String): TestCycleResponse? {
@@ -58,7 +67,7 @@ object JiraApiClient {
             .authentication().bearer(apiKey)
             .jsonBody(mapper.writeValueAsString(jsonAsMap))
             .response()
-        .also { log.debug(it.toString()) }
+            .also { log.debug(it.toString()) }
         return if (response.isClientError || response.isServerError) {
             null
         } else {
@@ -67,7 +76,28 @@ object JiraApiClient {
     }
 
     data class TestCasePostResult(
-        val result: Boolean,
-        val error: String?
+        val response: Response,
+        val jiraResultRequest: JiraResultRequest
+    ) {
+        val posted get() = response.isSuccessful
+        val error: ErrorResponse?
+            get() {
+                return if (response.isClientError || response.isServerError) {
+                    mapper.readValue(response.body().asString(contentType), ErrorResponse::class.java)
+                } else null
+            }
+    }
+
+    data class JiraResultRequest(
+        val projectKey: String,
+        val testCaseKey: String,
+        val testCycleKey: String,
+        val statusName: String,
+        val executionTime: Long,
+        val environmentName: String,
+        val actualEndDate: String,
+        val comment: String
     )
+
+    data class ErrorResponse(val message: String)
 }
