@@ -1,4 +1,7 @@
+import mu.KotlinLogging
+
 object XmlChecker {
+    private val log = KotlinLogging.logger { }
     private const val maxCaseResults = 1500
 
     fun checkXml(reportDir: String, projectKey: String, automationLabel: String, updateCases: Boolean) {
