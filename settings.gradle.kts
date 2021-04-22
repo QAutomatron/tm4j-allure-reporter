@@ -1,2 +1,2 @@
-rootProject.name = "tm4j-allure-reporter"
+rootProject.name = "zs-reporter"
 

@@ -2,21 +2,38 @@ package api
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.kittinunf.fuel.Fuel
-import com.github.kittinunf.fuel.core.Response
+import com.github.kittinunf.fuel.core.*
 import com.github.kittinunf.fuel.core.extensions.authentication
 import com.github.kittinunf.fuel.core.extensions.jsonBody
-import com.github.kittinunf.fuel.core.isClientError
-import com.github.kittinunf.fuel.core.isServerError
-import com.github.kittinunf.fuel.core.isSuccessful
-import data.jira.JiraResult
+import com.github.kittinunf.fuel.jackson.responseObject
+import data.tms.ErrorResponse
+import data.tms.JiraResult
+import data.tms.TestCaseResponse
+import data.tms.TestCasesResponse
 import mu.KotlinLogging
 
-object JiraApiClient {
-    private const val api = "https://api.adaptavist.io/tm4j/v2"
-    var apiKey = ""
-    private const val contentType = "application/json"
-    private val mapper = jacksonObjectMapper()
-    private val log = KotlinLogging.logger {}
+class ZephyrClient(private val apiKey: String) {
+
+    companion object {
+        private const val api = "https://api.adaptavist.io/tm4j/v2"
+        private const val contentType = "application/json"
+        private val mapper = jacksonObjectMapper()
+        private val log = KotlinLogging.logger {}
+    }
+
+    /**
+     * GET /testcases
+     * @param projectKey
+     * @param maxResults
+     */
+    fun getTestCases(projectKey: String, maxResults: Int = 10): TestCasesResponse? {
+        log.info { "Getting cases from TSM" }
+        val (request, response, result) = Fuel.get("$api/testcases?maxResults=$maxResults&projectKey=$projectKey")
+            .authentication().bearer(apiKey)
+            .responseObject<TestCasesResponse>()
+        responseHandler(request, response)
+        return result.component1()
+    }
 
     fun postTestExecution(projectKey: String, testCycleKey: String, jiraResult: JiraResult): TestCasePostResult {
 
@@ -75,6 +92,15 @@ object JiraApiClient {
         }
     }
 
+    fun updateCase(updatedCase: TestCaseResponse) {
+        log.info { "Will set [${updatedCase.key}] labels to [${updatedCase.labels}]" }
+        val (request, response, _) = Fuel.put("$api/testcases/${updatedCase.key}")
+            .authentication().bearer(apiKey)
+            .jsonBody(mapper.writeValueAsString(updatedCase))
+            .response()
+        responseHandler(request, response)
+    }
+
     data class TestCasePostResult(
         val response: Response,
         val jiraResultRequest: JiraResultRequest
@@ -88,6 +114,15 @@ object JiraApiClient {
             }
     }
 
+    private fun responseHandler(request: Request, response: Response) {
+        if (response.isSuccessful) {
+            log.info { "Request ${request.method} to ${request.url} is OK" }
+        } else if (response.isClientError || response.isServerError) {
+            val error = mapper.readValue(response.body().asString(contentType), ErrorResponse::class.java)
+            log.error { "Error updating test case: $error" }
+        }
+    }
+
     data class JiraResultRequest(
         val projectKey: String,
         val testCaseKey: String,
@@ -98,6 +133,4 @@ object JiraApiClient {
         val actualEndDate: String,
         val comment: String
     )
-
-    data class ErrorResponse(val errorCode: Int?, val message: String?)
 }

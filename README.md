@@ -1,5 +1,7 @@
-# tm4j-allure-reporter
-Report `allure-results` from Marathon to tm4j
+# zs-reporter
+
+1. Report `allure-results` from Marathon to zephyr scale
+2. Validate junit report and sync results with zephyr scale
 
 ### Usage:
 
@@ -7,13 +9,22 @@ Report `allure-results` from Marathon to tm4j
 
 ### Run:
 ```
-java -jar tm4j-allure-reporter.jar \ 
---jiraApiKey API_KEY 
+java -jar zs-reporter.jar \ 
+--mode allure
+--token TOKEN 
 --projectKey PROJECT_KEY
 --cycleName "My Test Cycle name" 
 --cycleDescription "My Test Cycle description" 
---reportDir "allure-results/" 
---debug true
+--reportFrom "allure-results/" 
 ```
 
-Set `debug` to `false` for posting
+### To validate XML Junit report:
+
+```
+java -jar zs-reporter.jar \
+--mode "xml"
+--automationLabel AUTOMATION_LABEL
+--token TOKEN
+--projectKey PROJECT_KEY
+--reportFrom "./report.xml"
+```

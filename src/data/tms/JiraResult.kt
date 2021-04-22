@@ -1,4 +1,4 @@
-package data.jira
+package data.tms
 
 import data.allure.AllureResult
 

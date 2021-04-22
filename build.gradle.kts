@@ -1,25 +1,30 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-val kotlinVersion = "1.3.70"
+val kotlinVersion = "1.4.32"
 val logbackVersion = "1.2.3"
-val fuelVersion = "2.2.2"
+val fuelVersion = "2.3.1"
 val kotlinLoggingVersion = "1.7.6"
-val konfigVersion = "1.6.10.0"
+val arkenvVersion = "3.2.0"
 
 buildscript {
     repositories {
-        jcenter()
+        mavenCentral()
     }
 }
 
 plugins {
     application
-    id("com.github.johnrengelman.shadow") version "5.1.0"
-    id("org.jetbrains.kotlin.jvm") version "1.3.70"
+    id("com.github.johnrengelman.shadow") version "6.1.0"
+    id("org.jetbrains.kotlin.jvm") version "1.4.32"
 }
 
 application {
     mainClassName = "ApplicationKt"
+}
+
+tasks.withType<KotlinCompile> {
+    kotlinOptions.jvmTarget = "1.8"
 }
 
 sourceSets {
@@ -33,7 +38,7 @@ sourceSets {
 }
 
 repositories {
-    jcenter()
+    mavenCentral()
     maven("https://kotlin.bintray.com/ktor")
     maven("https://dl.bintray.com/serpro69/maven/")
 }
@@ -47,14 +52,19 @@ dependencies {
     implementation("com.github.kittinunf.fuel:fuel:$fuelVersion")
     implementation("com.github.kittinunf.fuel:fuel-jackson:$fuelVersion")
 
-    implementation("com.natpryce:konfig:$konfigVersion")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.12.+")
+    implementation("com.apurebase:arkenv:$arkenvVersion")
+}
 
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.10.+")
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 tasks {
     named<ShadowJar>("shadowJar") {
-        archiveBaseName.set("tm4j-allure-reporter")
+        archiveBaseName.set("zs-reporter")
         archiveVersion.set("")
         archiveClassifier.set("")
         mergeServiceFiles()

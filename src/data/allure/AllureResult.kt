@@ -1,7 +1,7 @@
 package data.allure
 
-import data.jira.JiraCaseStatus
-import data.jira.JiraResult
+import data.tms.JiraCaseStatus
+import data.tms.JiraResult
 import java.text.SimpleDateFormat
 import java.util.*
 

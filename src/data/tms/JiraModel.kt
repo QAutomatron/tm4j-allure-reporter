@@ -1,4 +1,4 @@
-package data.jira
+package data.tms
 
 object JiraCaseStatus {
     const val pass = "Pass"
