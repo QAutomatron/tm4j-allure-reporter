@@ -1,6 +1,8 @@
 import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import data.tms.TestCasesResponse
 import data.xml.TestSuites
 import java.io.File
 import java.io.InputStream

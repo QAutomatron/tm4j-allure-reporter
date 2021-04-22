@@ -3,19 +3,19 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val kotlinVersion = "1.4.32"
 val logbackVersion = "1.2.3"
-val fuelVersion = "2.2.2"
+val fuelVersion = "2.3.1"
 val kotlinLoggingVersion = "1.7.6"
 val arkenvVersion = "3.2.0"
 
 buildscript {
     repositories {
-        jcenter()
+        mavenCentral()
     }
 }
 
 plugins {
     application
-    id("com.github.johnrengelman.shadow") version "5.1.0"
+    id("com.github.johnrengelman.shadow") version "6.1.0"
     id("org.jetbrains.kotlin.jvm") version "1.4.32"
 }
 
@@ -38,7 +38,7 @@ sourceSets {
 }
 
 repositories {
-    jcenter()
+    mavenCentral()
     maven("https://kotlin.bintray.com/ktor")
     maven("https://dl.bintray.com/serpro69/maven/")
 }
@@ -64,7 +64,7 @@ java {
 
 tasks {
     named<ShadowJar>("shadowJar") {
-        archiveBaseName.set("tm4j-allure-reporter")
+        archiveBaseName.set("zs-reporter")
         archiveVersion.set("")
         archiveClassifier.set("")
         mergeServiceFiles()

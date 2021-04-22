@@ -57,14 +57,17 @@ object XmlChecker {
 
             // Check
             caseIdPairs.forEach { caseIdPair ->
-                if (!casesKeysFromJira.contains(caseIdPair.first)) {
+                val findCase = casesResponse.values.firstOrNull { it.key == caseIdPair.first }
+                if (findCase == null) {
                     log.error { "[Missing case in TSM]: ${caseIdPair.first} from ${caseIdPair.second}" }
-                } else if (!casesResponse.values.first { it.key == caseIdPair.first }.labels.contains(automationLabel)) {
-                    log.error { "[Missing automation label $automationLabel]: ${caseIdPair.first} from ${caseIdPair.second}" }
-                    val originalCase = casesResponse.values.first { it.key == caseIdPair.first }
-                    val updatedCase = originalCase.copy(labels = originalCase.labels.apply { add(automationLabel) })
-                    if (updateCases) zephyrClient.updateCase(updatedCase) else { log.info {"Case update disabled"}}
-                }
+                } else
+                    if (!findCase.labels.contains(automationLabel)) {
+                        log.error { "[Missing automation label $automationLabel]: ${caseIdPair.first} from ${caseIdPair.second}" }
+                        val updatedCase = findCase.copy(labels = findCase.labels.apply { add(automationLabel) })
+                        if (updateCases) zephyrClient.updateCase(updatedCase) else {
+                            log.info { "Case update disabled, won't update TSM" }
+                        }
+                    }
             }
             log.info { "Done" }
         }
