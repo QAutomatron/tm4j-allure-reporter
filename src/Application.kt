@@ -1,13 +1,10 @@
-import JsonParser.getAllureResultsFrom
 import api.ZephyrClient
 import com.apurebase.arkenv.Arkenv
 import com.apurebase.arkenv.util.parse
-import com.github.kittinunf.fuel.core.isServerError
 import data.AllureArguments
 import data.AllureReporter
 import data.MainArguments
 import data.XmlArguments
-import data.tms.JiraResult
 import mu.KotlinLogging
 
 val log = KotlinLogging.logger {}
@@ -31,12 +28,24 @@ fun main(args: Array<String>) {
         "allure" -> {
             log.info { "Allure mode selected" }
             Arkenv.parse(AllureArguments, args)
-            AllureReporter.reportAllure(reportDir, projectKey, AllureArguments.cycleName, AllureArguments.cycleDescription)
+            AllureReporter.reportAllure(
+                reportDir,
+                projectKey,
+                AllureArguments.cycleName,
+                AllureArguments.cycleDescription
+            )
         }
         "xml" -> {
             log.info { "XML mode selected" }
             Arkenv.parse(XmlArguments, args)
-            XmlChecker.checkXml(reportDir, projectKey, XmlArguments.automationLabel, XmlArguments.updateCases)
+            log.info { "XML Arguments provided: $XmlArguments" }
+            XmlChecker.checkXml(
+                reportDir,
+                projectKey,
+                XmlArguments.automationLabel,
+                XmlArguments.updateCases,
+                XmlArguments.suiteNameContains
+            )
         }
         else -> {
             log.info { "No mode selected, please select 'allure', 'debug' or 'xml'" }

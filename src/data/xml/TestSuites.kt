@@ -50,7 +50,7 @@ data class TestSuite(
 data class TestCase(
     @get: JacksonXmlProperty(isAttribute = true) val classname: String,
     @get: JacksonXmlProperty(isAttribute = true) val name: String,
-    @get: JacksonXmlProperty(isAttribute = true) val time: String,
+    @get: JacksonXmlProperty(isAttribute = true) val time: String?,
     @get: JacksonXmlProperty(isAttribute = true) val retries: String?,
     @JacksonXmlProperty val failure: String?,
     @JacksonXmlProperty val skipped: String?

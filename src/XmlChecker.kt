@@ -1,18 +1,40 @@
+import data.xml.TestSuite
 import mu.KotlinLogging
 
 object XmlChecker {
     private val log = KotlinLogging.logger { }
     private const val maxCaseResults = 1500
 
-    fun checkXml(reportDir: String, projectKey: String, automationLabel: String, updateCases: Boolean) {
+    fun checkXml(reportDir: String,
+                 projectKey: String,
+                 automationLabel: String,
+                 updateCases: Boolean,
+                 suiteNameContains: String?) {
+        val caseIdNamePairs = checkForMissingIds(projectKey, reportDir, suiteNameContains)
+        checkPairsForDup(caseIdNamePairs)
+        checkIdsAndLabelInTsm(projectKey, caseIdNamePairs, automationLabel, maxResults = maxCaseResults, updateCases)
+    }
+
+    private fun checkForMissingIds(
+        projectKey: String,
+        reportDir: String,
+        suiteNameContains: String?
+    ): ArrayList<Pair<String, String>> {
         val pattern = "${projectKey}_T\\d+".toRegex()
         val suites = XmlParser.parseFileAs(reportDir)
-        val caseIdPairs = arrayListOf<Pair<String, String>>()
-        suites.testSuites.forEach {
+        val caseIdNamePairs = arrayListOf<Pair<String, String>>()
+        val filteredSuites: List<TestSuite> = if (suiteNameContains != null) {
+            log.info { "Test suite name should contain [$suiteNameContains]" }
+            suites.testSuites.filter { it.name.contains(suiteNameContains) }
+        } else {
+            suites.testSuites
+        }
+        log.debug { "Filtered suites size: ${filteredSuites.size}" }
+        filteredSuites.forEach {
             it.testcase.forEach { testCase ->
                 val caseName = testCase.name
                 if (pattern.containsMatchIn(caseName)) {
-                    caseIdPairs.add(
+                    caseIdNamePairs.add(
                         Pair(
                             pattern.find(caseName)?.groupValues?.get(0).toString().replace("_", "-"),
                             caseName
@@ -23,8 +45,7 @@ object XmlChecker {
                 }
             }
         }
-        checkPairsForDup(caseIdPairs)
-        checkIdsAndLabelInTsm(projectKey, caseIdPairs, automationLabel, maxResults = maxCaseResults, updateCases)
+        return caseIdNamePairs
     }
 
     private fun checkPairsForDup(caseIdPairs: ArrayList<Pair<String, String>>) {

@@ -53,7 +53,7 @@ object AllureReporter {
     /**
      * Post results to Jira. Return array of not posted.
      */
-    fun postResultsToJira(
+    private fun postResultsToJira(
         projectKey: String,
         testCycleKey: String,
         resultsToPost: ArrayList<JiraResult>
