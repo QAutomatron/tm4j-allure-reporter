@@ -2,7 +2,6 @@ import api.ZephyrClient
 import com.apurebase.arkenv.Arkenv
 import com.apurebase.arkenv.util.parse
 import data.AllureArguments
-import data.AllureReporter
 import data.MainArguments
 import data.XmlArguments
 import mu.KotlinLogging

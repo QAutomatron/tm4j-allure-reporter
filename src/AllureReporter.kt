@@ -1,11 +1,8 @@
-package data
-
 import JsonParser.getAllureResultsFrom
 import api.ZephyrClient
 import com.github.kittinunf.fuel.core.isServerError
 import data.tms.JiraResult
 import mu.KotlinLogging
-import zephyrClient
 
 object AllureReporter {
     private val log = KotlinLogging.logger { }
