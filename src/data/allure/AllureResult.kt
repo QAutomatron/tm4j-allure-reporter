@@ -13,10 +13,17 @@ data class AllureResult(
     val statusDetails: StatusDetails?,
     val fullName: String
 ) {
+
+    val linkedKey: String?
+        get() {
+            val key = links.firstOrNull { it.url.matches("^[A-Z]+-T\\d+".toRegex()) }
+            return key?.url
+        }
+
     fun toJiraResult(): JiraResult {
         var key = ""
         if (links.isNotEmpty()) {
-            val filtered = links.filter { it.name == "Issue" && it.url.contains("-T")}
+            val filtered = links.filter { it.name == "Issue" && it.url.contains("-T") }
             if (filtered.isNotEmpty()) key = filtered[0].url
         }
         val result = when (status) {

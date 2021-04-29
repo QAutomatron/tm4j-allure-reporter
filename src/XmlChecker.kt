@@ -5,11 +5,13 @@ object XmlChecker {
     private val log = KotlinLogging.logger { }
     private const val maxCaseResults = 1500
 
-    fun checkXml(reportDir: String,
-                 projectKey: String,
-                 automationLabel: String,
-                 updateCases: Boolean,
-                 suiteNameContains: String?) {
+    fun checkXml(
+        reportDir: String,
+        projectKey: String,
+        automationLabel: String,
+        updateCases: Boolean,
+        suiteNameContains: String?
+    ) {
         val caseIdNamePairs = checkForMissingIds(projectKey, reportDir, suiteNameContains)
         checkPairsForDup(caseIdNamePairs)
         checkIdsAndLabelInTsm(projectKey, caseIdNamePairs, automationLabel, maxResults = maxCaseResults, updateCases)
@@ -88,7 +90,9 @@ object XmlChecker {
                     if (!findCase.labels.contains(automationLabel)) {
                         log.error { "[Missing automation label $automationLabel]: ${caseIdPair.first} from ${caseIdPair.second}" }
                         val updatedCase = findCase.copy(labels = findCase.labels.apply { add(automationLabel) })
-                        if (updateCases) zephyrClient.updateCase(updatedCase) else {
+                        if (updateCases) {
+                            zephyrClient.updateCase(updatedCase)
+                        } else {
                             log.info { "Case update disabled, won't update TSM" }
                         }
                     }

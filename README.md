@@ -27,4 +27,6 @@ java -jar zs-reporter.jar \
 --token TOKEN
 --projectKey PROJECT_KEY
 --reportFrom "./report.xml"
+--updateCases false
+--suiteNameContains "UITests"
 ```
