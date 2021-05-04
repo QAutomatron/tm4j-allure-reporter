@@ -25,11 +25,40 @@ object XmlChecker {
         output.tsm = checkIdsAndLabelInTsm(projectKey, caseIdNamePairs, automationLabel, maxResults = maxCaseResults, updateCases)
 
         // Output to file
+        val jsonFileName = "zephyr.checker.result.json"
+        val mdFileName = "zephyr.checker.result.md"
+        saveOutputAsJson(jsonFileName, output)
+        saveOutputAsMD(mdFileName, output)
+    }
+
+    private fun saveOutputAsMD(fileName: String, output: XmlCheckerOutput) {
+        val h5 = "#####"
+        File(fileName).printWriter().use { out ->
+            if (output.missingIds.isNotEmpty()) {
+                out.println("$h5 Missing IDs:")
+                output.missingIds.forEach { out.println("- $it") }
+            }
+            if (output.duplicates.isNotBlank()) {
+                out.println("$h5 Duplicated IDs:")
+                out.println(output.duplicates)
+            }
+            if (output.tsm.missingCase.isNotEmpty()) {
+                out.println("$h5 Missing Cases in ZS:")
+                output.tsm.missingCase.forEach { out.println("- $it") }
+            }
+            if (output.tsm.missingLabel.isNotEmpty()) {
+                out.println("$h5 Missing Labels in ZS:")
+                output.tsm.missingLabel.forEach { out.println("- $it") }
+            }
+            log.info { "Output saved to file $fileName" }
+        }
+    }
+
+    private fun saveOutputAsJson(fileName: String, output: XmlCheckerOutput) {
         val mapper = jacksonObjectMapper()
         val prettyPrinter = DefaultPrettyPrinter()
         prettyPrinter.indentArraysWith(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE)
         mapper.setDefaultPrettyPrinter(prettyPrinter)
-        val fileName = "zephyr.checker.result.json"
         File(fileName).writeText(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(output))
         log.info { "Output saved to file $fileName" }
     }
