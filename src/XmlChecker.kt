@@ -3,6 +3,7 @@ import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import data.TsmOutput
 import data.XmlCheckerOutput
+import data.tms.TestCasesResponse
 import data.xml.TestSuite
 import mu.KotlinLogging
 import java.io.File
@@ -22,7 +23,8 @@ object XmlChecker {
         val output = XmlCheckerOutput()
         val caseIdNamePairs = checkForMissingIds(projectKey, reportDir, suiteNameContains, output)
         output.duplicates = checkPairsForDup(caseIdNamePairs)
-        output.tsm = checkIdsAndLabelInTsm(projectKey, caseIdNamePairs, automationLabel, maxResults = maxCaseResults, updateCases)
+        val casesResponse = zephyrClient.getTestCases(projectKey, maxCaseResults)
+        output.tsm = checkIdsAndLabelInTsm(casesResponse, caseIdNamePairs, automationLabel, updateCases)
 
         // Output to file
         val jsonFileName = "zephyr.checker.result.json"
@@ -109,21 +111,18 @@ object XmlChecker {
 
     /**
      * Get all TC ids from TSM and compare them with CaseIdsPairs
-     * @param projectKey project key in tsm
+     * @param casesResponse response of test cases
      * @param caseIdPairs pairs of ids and test method names
-     * @param maxResults maximum items retrieved from TSM per request
      */
     private fun checkIdsAndLabelInTsm(
-        projectKey: String,
+        casesResponse: TestCasesResponse?,
         caseIdPairs: ArrayList<Pair<String, String>>,
         automationLabel: String,
-        maxResults: Int,
         updateCases: Boolean
     ): TsmOutput {
         // Check for existed cases in TSM
         log.info { "Will compare TC with TSM" }
         val tsmOutput = TsmOutput()
-        val casesResponse = zephyrClient.getTestCases(projectKey, maxResults)
         if (casesResponse == null) {
             log.error { "TC list from TSM is null. Nothing will happens" }
             return tsmOutput
