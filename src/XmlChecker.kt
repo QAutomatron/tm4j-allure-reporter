@@ -3,6 +3,7 @@ import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import data.TsmOutput
 import data.XmlCheckerOutput
+import data.tms.StatusType
 import data.tms.TestCasesResponse
 import data.xml.TestSuite
 import mu.KotlinLogging
@@ -24,7 +25,22 @@ object XmlChecker {
         val caseIdNamePairs = checkForMissingIds(projectKey, reportDir, suiteNameContains, output)
         output.duplicates = checkPairsForDup(caseIdNamePairs)
         val casesResponse = zephyrClient.getTestCases(projectKey, maxCaseResults)
-        output.tsm = checkIdsAndLabelInTsm(casesResponse, caseIdNamePairs, automationLabel, updateCases)
+        val deprecatedStatusId = zephyrClient.getStatuses(
+            projectKey,
+            statusType = StatusType.TEST_CASE
+        )?.values?.findLast { it.name.toLowerCase() == "deprecated" }?.id
+        if (casesResponse != null && deprecatedStatusId != null) {
+            output.tsm =
+                checkIdsLabelStatusInTsm(
+                    casesResponse,
+                    caseIdNamePairs,
+                    automationLabel,
+                    updateCases,
+                    deprecatedStatusId
+                )
+        } else {
+            log.error { "Case list from Jira is empty or deprecated status id is empty" }
+        }
 
         // Output to file
         val jsonFileName = "zephyr.checker.result.json"
@@ -51,6 +67,10 @@ object XmlChecker {
             if (output.tsm.missingLabel.isNotEmpty()) {
                 out.println("$h5 Missing Labels in ZS:")
                 output.tsm.missingLabel.forEach { out.println("- $it") }
+            }
+            if (output.tsm.deprecatedCase.isNotEmpty()) {
+                out.println("$h5 Deprecated Cases in ZS:")
+                output.tsm.deprecatedCase.forEach { out.println("- $it") }
             }
             log.info { "Output saved to file $fileName" }
         }
@@ -114,45 +134,41 @@ object XmlChecker {
      * @param casesResponse response of test cases
      * @param caseIdPairs pairs of ids and test method names
      */
-    private fun checkIdsAndLabelInTsm(
-        casesResponse: TestCasesResponse?,
+    private fun checkIdsLabelStatusInTsm(
+        casesResponse: TestCasesResponse,
         caseIdPairs: ArrayList<Pair<String, String>>,
         automationLabel: String,
-        updateCases: Boolean
+        updateCases: Boolean,
+        deprecatedStatusId: Long
     ): TsmOutput {
-        // Check for existed cases in TSM
         log.info { "Will compare TC with TSM" }
         val tsmOutput = TsmOutput()
-        if (casesResponse == null) {
-            log.error { "TC list from TSM is null. Nothing will happens" }
-            return tsmOutput
-        } else {
-            log.info { "Cases from TSM loaded" }
-            log.info { "Max results: ${casesResponse.maxResults}" }
-            val casesKeysFromJira = arrayListOf<String>()
-            casesResponse.values.forEach { casesKeysFromJira.add(it.key) }
-
-            // Check
-            caseIdPairs.forEach { caseIdPair ->
-                val findCase = casesResponse.values.firstOrNull { it.key == caseIdPair.first }
-                val casePairString = "${caseIdPair.first} from ${caseIdPair.second}"
-                if (findCase == null) {
-                    log.error { "[Missing case in TSM]: $casePairString" }
-                    tsmOutput.missingCase.add(casePairString)
-                } else
-                    if (!findCase.labels.contains(automationLabel)) {
-                        log.error { "[Missing automation label $automationLabel]: $casePairString" }
-                        tsmOutput.missingLabel.add(casePairString)
-                        val updatedCase = findCase.copy(labels = findCase.labels.apply { add(automationLabel) })
-                        if (updateCases) {
-                            zephyrClient.updateCase(updatedCase)
-                        } else {
-                            log.info { "Case update disabled, won't update TSM" }
-                        }
+        caseIdPairs.forEach { caseIdPair ->
+            val findCase = casesResponse.values.firstOrNull { it.key == caseIdPair.first }
+            val casePairString = "${caseIdPair.first} in ${caseIdPair.second}"
+            // Check missing case
+            if (findCase == null) {
+                log.error { "[Missing case in TSM]: $casePairString" }
+                tsmOutput.missingCase.add(casePairString)
+            } else
+                // Check missed automation label
+                if (!findCase.labels.contains(automationLabel)) {
+                    log.error { "[Missing automation label $automationLabel]: $casePairString" }
+                    tsmOutput.missingLabel.add(casePairString)
+                    val updatedCase = findCase.copy(labels = findCase.labels.apply { add(automationLabel) })
+                    if (updateCases) {
+                        zephyrClient.updateCase(updatedCase)
+                    } else {
+                        log.info { "Case update disabled, won't update TSM" }
                     }
-            }
-            log.info { "Done" }
+                }
+                // Check deprecated cases
+                if (findCase?.status?.id == deprecatedStatusId) {
+                    log.error { "[Deprecated case]: $casePairString" }
+                    tsmOutput.deprecatedCase.add(casePairString)
+                }
         }
+        log.info { "Done" }
         return tsmOutput
     }
 }

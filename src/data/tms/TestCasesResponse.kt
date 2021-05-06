@@ -1,7 +1,5 @@
 package data.tms
 
-import com.fasterxml.jackson.annotation.JsonProperty
-
 data class TestCasesResponse(
     val maxResults: Int,
     val total: Int,

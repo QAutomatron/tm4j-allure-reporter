@@ -9,5 +9,6 @@ data class XmlCheckerOutput(
 
 data class TsmOutput(
     val missingCase: ArrayList<String> = arrayListOf(),
+    val deprecatedCase: ArrayList<String> = arrayListOf(),
     val missingLabel: ArrayList<String> = arrayListOf()
 )

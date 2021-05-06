@@ -6,10 +6,7 @@ import com.github.kittinunf.fuel.core.*
 import com.github.kittinunf.fuel.core.extensions.authentication
 import com.github.kittinunf.fuel.core.extensions.jsonBody
 import com.github.kittinunf.fuel.jackson.responseObject
-import data.tms.ErrorResponse
-import data.tms.JiraResult
-import data.tms.TestCaseResponse
-import data.tms.TestCasesResponse
+import data.tms.*
 import mu.KotlinLogging
 
 class ZephyrClient(private val apiKey: String) {
@@ -31,6 +28,15 @@ class ZephyrClient(private val apiKey: String) {
         val (request, response, result) = Fuel.get("$api/testcases?maxResults=$maxResults&projectKey=$projectKey")
             .authentication().bearer(apiKey)
             .responseObject<TestCasesResponse>()
+        responseHandler(request, response)
+        return result.component1()
+    }
+
+    fun getStatuses(projectKey: String, statusType: StatusType, maxResults: Int = 10): TestStatusesResponse? {
+        log.info { "Getting cases from TSM" }
+        val (request, response, result) = Fuel.get("$api/statuses?maxResults=$maxResults&projectKey=$projectKey&statusType=${statusType.name}")
+            .authentication().bearer(apiKey)
+            .responseObject<TestStatusesResponse>()
         responseHandler(request, response)
         return result.component1()
     }
