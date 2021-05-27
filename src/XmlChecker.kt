@@ -50,27 +50,44 @@ object XmlChecker {
     }
 
     private fun saveOutputAsMD(fileName: String, output: XmlCheckerOutput) {
-        val h5 = "#####"
+        val detailsOpen = "<details>"
+        val detailsClose = "</details>"
         File(fileName).printWriter().use { out ->
+            out.println("### Zephyr integration check")
             if (output.missingIds.isNotEmpty()) {
-                out.println("$h5 Missing IDs:")
+                out.println(detailsOpen)
+                out.println("<summary>Missing IDs:</summary>")
+                out.println("")
                 output.missingIds.forEach { out.println("- $it") }
+                out.println(detailsClose)
             }
             if (output.duplicates.isNotBlank()) {
-                out.println("$h5 Duplicated IDs:")
+                out.println(detailsOpen)
+                out.println("<summary>Duplicated IDs:</summary>")
+                out.println("")
                 out.println(output.duplicates)
+                out.println(detailsClose)
             }
             if (output.tsm.missingCase.isNotEmpty()) {
-                out.println("$h5 Missing Cases in ZS:")
+                out.println(detailsOpen)
+                out.println("<summary>Missing Cases in ZS:</summary>")
+                out.println("")
                 output.tsm.missingCase.forEach { out.println("- $it") }
+                out.println(detailsClose)
             }
             if (output.tsm.missingLabel.isNotEmpty()) {
-                out.println("$h5 Missing Labels in ZS:")
+                out.println(detailsOpen)
+                out.println("<summary>Missing Labels in ZS:</summary>")
+                out.println("")
                 output.tsm.missingLabel.forEach { out.println("- $it") }
+                out.println(detailsClose)
             }
             if (output.tsm.deprecatedCase.isNotEmpty()) {
-                out.println("$h5 Deprecated Cases in ZS:")
+                out.println(detailsOpen)
+                out.println("<summary>Deprecated Cases in ZS:</summary>")
+                out.println("")
                 output.tsm.deprecatedCase.forEach { out.println("- $it") }
+                out.println(detailsClose)
             }
             log.info { "Output saved to file $fileName" }
         }
