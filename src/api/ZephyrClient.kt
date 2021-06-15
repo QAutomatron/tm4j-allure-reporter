@@ -12,7 +12,7 @@ import mu.KotlinLogging
 class ZephyrClient(private val apiKey: String) {
 
     companion object {
-        private const val api = "https://api.adaptavist.io/tm4j/v2"
+        private const val api = "https://api.zephyrscale.smartbear.com/v2"
         private const val contentType = "application/json"
         private val mapper = jacksonObjectMapper()
         private val log = KotlinLogging.logger {}
