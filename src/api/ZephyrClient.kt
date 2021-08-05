@@ -33,7 +33,7 @@ class ZephyrClient(private val apiKey: String) {
     }
 
     fun getStatuses(projectKey: String, statusType: StatusType, maxResults: Int = 10): TestStatusesResponse? {
-        log.info { "Getting cases from TSM" }
+        log.info { "Getting statuses from TSM" }
         val (request, response, result) = Fuel.get("$api/statuses?maxResults=$maxResults&projectKey=$projectKey&statusType=${statusType.name}")
             .authentication().bearer(apiKey)
             .responseObject<TestStatusesResponse>()

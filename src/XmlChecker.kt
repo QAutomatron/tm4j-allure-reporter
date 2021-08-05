@@ -22,13 +22,18 @@ object XmlChecker {
         suiteNameContains: String?
     ) {
         val output = XmlCheckerOutput()
+        // Check missing ids in test names
         val caseIdNamePairs = checkForMissingIds(projectKey, reportDir, suiteNameContains, output)
+        // Check duplicate ids in test names
         output.duplicates = checkPairsForDup(caseIdNamePairs)
+        // Get case list from Zephyr
         val casesResponse = zephyrClient.getTestCases(projectKey, maxCaseResults)
+        // Get deprecated status id
         val deprecatedStatusId = zephyrClient.getStatuses(
             projectKey,
             statusType = StatusType.TEST_CASE
         )?.values?.findLast { it.name.toLowerCase() == "deprecated" }?.id
+        // Check labels
         if (casesResponse != null && deprecatedStatusId != null) {
             output.tsm =
                 checkIdsLabelStatusInTsm(
@@ -68,11 +73,18 @@ object XmlChecker {
                 out.println(output.duplicates)
                 out.println(detailsClose)
             }
-            if (output.tsm.missingCase.isNotEmpty()) {
+            if (output.tsm.missingInCode.isNotEmpty()) {
                 out.println(detailsOpen)
                 out.println("<summary>Missing Cases in ZS:</summary>")
                 out.println("")
-                output.tsm.missingCase.forEach { out.println("- $it") }
+                output.tsm.missingInCode.forEach { out.println("- $it") }
+                out.println(detailsClose)
+            }
+            if (output.tsm.missingInZephyr.isNotEmpty()) {
+                out.println(detailsOpen)
+                out.println("<summary>Missing Cases in ZS:</summary>")
+                out.println("")
+                output.tsm.missingInZephyr.forEach { out.println("- $it") }
                 out.println(detailsClose)
             }
             if (output.tsm.missingLabel.isNotEmpty()) {
@@ -158,15 +170,25 @@ object XmlChecker {
         updateCases: Boolean,
         deprecatedStatusId: Long
     ): TsmOutput {
-        log.info { "Will compare TC with TSM" }
         val tsmOutput = TsmOutput()
+        log.info { "Will compare TSM with Code" }
+        casesResponse.values.filter { it.labels.contains(automationLabel) && it.status.id != deprecatedStatusId }.forEach {
+            zephyrCase ->
+            val findCase = caseIdPairs.firstOrNull { it.first == zephyrCase.key }
+            val casePairString = "${zephyrCase.key} ${zephyrCase.name}"
+            if (findCase == null) {
+                log.error { "[Missing case in Code]: $casePairString" }
+                tsmOutput.missingInCode.add(casePairString)
+            }
+        }
+        log.info { "Will compare Code with TSM" }
         caseIdPairs.forEach { caseIdPair ->
             val findCase = casesResponse.values.firstOrNull { it.key == caseIdPair.first }
             val casePairString = "${caseIdPair.first} in ${caseIdPair.second}"
             // Check missing case
             if (findCase == null) {
                 log.error { "[Missing case in TSM]: $casePairString" }
-                tsmOutput.missingCase.add(casePairString)
+                tsmOutput.missingInZephyr.add(casePairString)
             } else
                 // Check missed automation label
                 if (!findCase.labels.contains(automationLabel)) {
