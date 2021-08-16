@@ -7,8 +7,8 @@ const val issueKey = "key"
 
 @JacksonXmlRootElement(localName = "testsuites")
 data class TestSuites(
-    @get: JacksonXmlProperty(isAttribute = true) val name: String,
-    @get: JacksonXmlProperty(isAttribute = true) val tests: String,
+    @get: JacksonXmlProperty(isAttribute = true) val name: String?,
+    @get: JacksonXmlProperty(isAttribute = true) val tests: Int,
     @get: JacksonXmlProperty(isAttribute = true) val time: String?,
     @get: JacksonXmlProperty(isAttribute = true) val failures: String,
     @get: JacksonXmlProperty(isAttribute = true) val retries: String?,
@@ -52,8 +52,8 @@ data class TestCase(
     @get: JacksonXmlProperty(isAttribute = true) val name: String,
     @get: JacksonXmlProperty(isAttribute = true) val time: String?,
     @get: JacksonXmlProperty(isAttribute = true) val retries: String?,
-    @JacksonXmlProperty val failure: String?,
-    @JacksonXmlProperty val skipped: String?
+    @get: JacksonXmlProperty val failure: String?,
+    @get:JacksonXmlProperty val skipped: String?
 )
 
 data class Property(

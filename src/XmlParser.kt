@@ -10,7 +10,6 @@ object XmlParser {
     private val kotlinXmlMapper = XmlMapper(JacksonXmlModule().apply {
         setDefaultUseWrapper(false)
     }).registerKotlinModule()
-//    .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
     fun parseFileAs(path: String): TestSuites = kotlinXmlMapper.readValue(File(path), TestSuites::class.java)

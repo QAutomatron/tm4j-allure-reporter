@@ -52,8 +52,8 @@ dependencies {
     implementation("com.github.kittinunf.fuel:fuel:$fuelVersion")
     implementation("com.github.kittinunf.fuel:fuel-jackson:$fuelVersion")
 
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
-    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.12.+")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.0-rc1")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.13.0-rc1")
     implementation("com.apurebase:arkenv:$arkenvVersion")
 }
 

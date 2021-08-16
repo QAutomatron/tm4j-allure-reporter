@@ -75,28 +75,28 @@ object XmlChecker {
             }
             if (output.tsm.missingInCode.isNotEmpty()) {
                 out.println(detailsOpen)
-                out.println("<summary>Missing Cases in ZS:</summary>")
+                out.println("<summary>Missing Cases in CODE:</summary>")
                 out.println("")
                 output.tsm.missingInCode.forEach { out.println("- $it") }
                 out.println(detailsClose)
             }
             if (output.tsm.missingInZephyr.isNotEmpty()) {
                 out.println(detailsOpen)
-                out.println("<summary>Missing Cases in ZS:</summary>")
+                out.println("<summary>Missing Cases in ZEPHYR:</summary>")
                 out.println("")
                 output.tsm.missingInZephyr.forEach { out.println("- $it") }
                 out.println(detailsClose)
             }
             if (output.tsm.missingLabel.isNotEmpty()) {
                 out.println(detailsOpen)
-                out.println("<summary>Missing Labels in ZS:</summary>")
+                out.println("<summary>Missing Labels in ZEPHYR:</summary>")
                 out.println("")
                 output.tsm.missingLabel.forEach { out.println("- $it") }
                 out.println(detailsClose)
             }
             if (output.tsm.deprecatedCase.isNotEmpty()) {
                 out.println(detailsOpen)
-                out.println("<summary>Deprecated Cases in ZS:</summary>")
+                out.println("<summary>Deprecated Cases in ZEPHYR:</summary>")
                 out.println("")
                 output.tsm.deprecatedCase.forEach { out.println("- $it") }
                 out.println(detailsClose)
