@@ -34,19 +34,20 @@ object XmlChecker {
             statusType = StatusType.TEST_CASE
         )?.values?.findLast { it.name.toLowerCase() == "deprecated" }?.id
         // Check labels
-        if (casesResponse != null && deprecatedStatusId != null) {
-            output.tsm =
-                checkIdsLabelStatusInTsm(
-                    casesResponse,
-                    caseIdNamePairs,
-                    automationLabel,
-                    updateCases,
-                    deprecatedStatusId
-                )
-        } else {
-            log.error { "Case list from Jira is empty or deprecated status id is empty" }
+        when {
+            casesResponse == null -> { log.error { "Case list from Jira is empty" } }
+            deprecatedStatusId == null -> { log.error { "Deprecated status id is empty" } }
+            else -> {
+                output.tsm =
+                    checkIdsLabelStatusInTsm(
+                        casesResponse,
+                        caseIdNamePairs,
+                        automationLabel,
+                        updateCases,
+                        deprecatedStatusId
+                    )
+            }
         }
-
         // Output to file
         val jsonFileName = "zephyr.checker.result.json"
         val mdFileName = "zephyr.checker.result.md"

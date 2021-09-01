@@ -21,7 +21,7 @@ data class TestCaseResponse(val id: Long,
                             val folder: IdSelf?,
                             val owner: Owner?,
                             val testScript: TestScript?,
-//                            val customFields: CustomFields?
+                            val customFields: CustomFields?
                             )
 
 data class Owner(val self: String, val accountId: String)

@@ -6,8 +6,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
  * Custom fields in TSM
  */
 data class CustomFields(
-    @JsonProperty("iOS Auto") val iOSAuto: String?,
-    @JsonProperty("Android Auto") val androidAuto: String?,
+    @JsonProperty("iOS Auto") val iosAutomationStatus: String?,
+    @JsonProperty("Android Auto") val androidAutomationStatus: String?,
     @JsonProperty("Type") val type: String?,
     @JsonProperty("Comment") val comment: String?,
 )
