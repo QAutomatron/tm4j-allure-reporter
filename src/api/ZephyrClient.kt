@@ -5,6 +5,7 @@ import com.github.kittinunf.fuel.Fuel
 import com.github.kittinunf.fuel.core.*
 import com.github.kittinunf.fuel.core.extensions.authentication
 import com.github.kittinunf.fuel.core.extensions.jsonBody
+import com.github.kittinunf.fuel.jackson.objectBody
 import com.github.kittinunf.fuel.jackson.responseObject
 import data.tms.*
 import mu.KotlinLogging
@@ -102,8 +103,9 @@ class ZephyrClient(private val apiKey: String) {
         log.info { "Will set [${updatedCase.key}] labels to [${updatedCase.labels}]" }
         log.debug { mapper.writeValueAsString(updatedCase) }
         val (request, response, _) = Fuel.put("$api/testcases/${updatedCase.key}")
-            .authentication().bearer(apiKey)
-            .jsonBody(mapper.writeValueAsString(updatedCase))
+            .authentication()
+                .bearer(apiKey)
+            .objectBody(updatedCase)
             .response()
         responseHandler(request, response)
     }
