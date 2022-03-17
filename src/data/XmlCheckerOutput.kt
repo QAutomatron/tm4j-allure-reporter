@@ -8,8 +8,8 @@ data class XmlCheckerOutput(
 }
 
 data class TsmOutput(
-    val missingInZephyr: ArrayList<String> = arrayListOf(),
-    val missingInCode: ArrayList<String> = arrayListOf(),
+    val shouldBeInZephyr: ArrayList<String> = arrayListOf(),
+    val shouldBeInCode: ArrayList<String> = arrayListOf(),
     val deprecatedCase: ArrayList<String> = arrayListOf(),
-    val missingLabel: ArrayList<String> = arrayListOf()
+    val missingStatus: ArrayList<String> = arrayListOf()
 )

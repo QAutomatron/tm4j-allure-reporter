@@ -23,7 +23,7 @@ java -jar zs-reporter.jar \
 ```
 java -jar zs-reporter.jar \
 --mode "xml"
---automationLabel AUTOMATION_LABEL
+--platform AUTOMATION_PLATFORM
 --token TOKEN
 --projectKey PROJECT_KEY
 --reportFrom "./report.xml"

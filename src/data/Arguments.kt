@@ -15,9 +15,9 @@ object AllureArguments {
 }
 
 object XmlArguments {
-    val automationLabel: String by argument()
+    val platform: String by argument()
     val updateCases: Boolean by argument()
     val suiteNameContains: String? by argument()
 
-    override fun toString() = "automationLabel: [$automationLabel]; updateCases: [$updateCases], suiteNameContains: [$suiteNameContains]"
+    override fun toString() = "platform: [$platform]; updateCases: [$updateCases], suiteNameContains: [$suiteNameContains]"
 }

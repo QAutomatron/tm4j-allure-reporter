@@ -100,8 +100,10 @@ class ZephyrClient(private val apiKey: String) {
     }
 
     fun updateCase(updatedCase: TestCaseResponse) {
-        log.info { "Will set [${updatedCase.key}] labels to [${updatedCase.labels}]" }
+        log.info { "================================" }
+        log.info { "Will update [${updatedCase.key}]" }
         log.debug { mapper.writeValueAsString(updatedCase) }
+        log.info { "================================" }
         val (request, response, _) = Fuel.put("$api/testcases/${updatedCase.key}")
             .authentication()
                 .bearer(apiKey)

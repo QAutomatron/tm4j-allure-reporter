@@ -41,7 +41,7 @@ fun main(args: Array<String>) {
             XmlChecker.checkXml(
                 reportDir,
                 projectKey,
-                XmlArguments.automationLabel,
+                XmlArguments.platform,
                 XmlArguments.updateCases,
                 XmlArguments.suiteNameContains
             )

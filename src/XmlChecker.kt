@@ -12,12 +12,12 @@ import java.io.File
 
 object XmlChecker {
     private val log = KotlinLogging.logger { }
-    private const val maxCaseResults = 1500
+    private const val maxCaseResults = 2000
 
     fun checkXml(
         reportDir: String,
         projectKey: String,
-        automationLabel: String,
+        platform: String,
         updateCases: Boolean,
         suiteNameContains: String?
     ) {
@@ -35,14 +35,18 @@ object XmlChecker {
         )?.values?.findLast { it.name.toLowerCase() == "deprecated" }?.id
         // Check labels
         when {
-            casesResponse == null -> { log.error { "Case list from Jira is empty" } }
-            deprecatedStatusId == null -> { log.error { "Deprecated status id is empty" } }
+            casesResponse == null -> {
+                log.error { "Case list from Jira is empty" }
+            }
+            deprecatedStatusId == null -> {
+                log.error { "Deprecated status id is empty" }
+            }
             else -> {
                 output.tsm =
                     checkIdsLabelStatusInTsm(
                         casesResponse,
                         caseIdNamePairs,
-                        automationLabel,
+                        platform,
                         updateCases,
                         deprecatedStatusId
                     )
@@ -74,25 +78,25 @@ object XmlChecker {
                 out.println(output.duplicates)
                 out.println(detailsClose)
             }
-            if (output.tsm.missingInCode.isNotEmpty()) {
+            if (output.tsm.shouldBeInCode.isNotEmpty()) {
                 out.println(detailsOpen)
                 out.println("<summary>Missing Cases in CODE:</summary>")
                 out.println("")
-                output.tsm.missingInCode.forEach { out.println("- $it") }
+                output.tsm.shouldBeInCode.forEach { out.println("- $it") }
                 out.println(detailsClose)
             }
-            if (output.tsm.missingInZephyr.isNotEmpty()) {
+            if (output.tsm.shouldBeInZephyr.isNotEmpty()) {
                 out.println(detailsOpen)
                 out.println("<summary>Missing Cases in ZEPHYR:</summary>")
                 out.println("")
-                output.tsm.missingInZephyr.forEach { out.println("- $it") }
+                output.tsm.shouldBeInZephyr.forEach { out.println("- $it") }
                 out.println(detailsClose)
             }
-            if (output.tsm.missingLabel.isNotEmpty()) {
+            if (output.tsm.missingStatus.isNotEmpty()) {
                 out.println(detailsOpen)
                 out.println("<summary>Missing Labels in ZEPHYR:</summary>")
                 out.println("")
-                output.tsm.missingLabel.forEach { out.println("- $it") }
+                output.tsm.missingStatus.forEach { out.println("- $it") }
                 out.println(detailsClose)
             }
             if (output.tsm.deprecatedCase.isNotEmpty()) {
@@ -167,21 +171,21 @@ object XmlChecker {
     private fun checkIdsLabelStatusInTsm(
         casesResponse: TestCasesResponse,
         caseIdPairs: ArrayList<Pair<String, String>>,
-        automationLabel: String,
+        platform: String,
         updateCases: Boolean,
         deprecatedStatusId: Long
     ): TsmOutput {
         val tsmOutput = TsmOutput()
         log.info { "Will compare TSM with Code" }
-        casesResponse.values.filter { it.labels.contains(automationLabel) && it.status.id != deprecatedStatusId }.forEach {
-            zephyrCase ->
-            val findCase = caseIdPairs.firstOrNull { it.first == zephyrCase.key }
-            val casePairString = "${zephyrCase.key} ${zephyrCase.name}"
-            if (findCase == null) {
-                log.error { "[Missing case in Code]: $casePairString" }
-                tsmOutput.missingInCode.add(casePairString)
+        casesResponse.values.filter { it.isAutomatedByPlatform(platform) && it.status.id != deprecatedStatusId }
+            .forEach { zephyrCase ->
+                val findCase = caseIdPairs.firstOrNull { it.first == zephyrCase.key }
+                val casePairString = "${zephyrCase.key} ${zephyrCase.name}"
+                if (findCase == null) {
+                    log.error { "[Missing case in Code]: $casePairString" }
+                    tsmOutput.shouldBeInCode.add(casePairString)
+                }
             }
-        }
         log.info { "Will compare Code with TSM" }
         caseIdPairs.forEach { caseIdPair ->
             val findCase = casesResponse.values.firstOrNull { it.key == caseIdPair.first }
@@ -189,24 +193,27 @@ object XmlChecker {
             // Check missing case
             if (findCase == null) {
                 log.error { "[Missing case in TSM]: $casePairString" }
-                tsmOutput.missingInZephyr.add(casePairString)
+                tsmOutput.shouldBeInZephyr.add(casePairString)
             } else
-                // Check missed automation label
-                if (!findCase.labels.contains(automationLabel)) {
-                    log.error { "[Missing automation label $automationLabel]: $casePairString" }
-                    tsmOutput.missingLabel.add(casePairString)
-                    val updatedCase = findCase.copy(labels = findCase.labels.apply { add(automationLabel) })
+            // Check missed automation status
+                if (!findCase.isAutomatedByPlatform(platform)) {
+                    // Save cases with missed labels
+                    log.error { "[Missing automation status for $platform]: $casePairString" }
+                    tsmOutput.missingStatus.add(casePairString)
+                    // Update test case with status
+                    findCase.setAutomationDoneForLabel(platform)
+                    // Push updates if enabled
                     if (updateCases) {
-                        zephyrClient.updateCase(updatedCase)
+                        zephyrClient.updateCase(findCase)
                     } else {
                         log.info { "Case update disabled, won't update TSM" }
                     }
                 }
-                // Check deprecated cases
-                if (findCase?.status?.id == deprecatedStatusId) {
-                    log.error { "[Deprecated case]: $casePairString" }
-                    tsmOutput.deprecatedCase.add(casePairString)
-                }
+            // Check deprecated cases
+            if (findCase?.status?.id == deprecatedStatusId) {
+                log.error { "[Deprecated case]: $casePairString" }
+                tsmOutput.deprecatedCase.add(casePairString)
+            }
         }
         log.info { "Done" }
         return tsmOutput
