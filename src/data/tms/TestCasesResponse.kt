@@ -1,6 +1,7 @@
 package data.tms
 
 import mu.KotlinLogging
+import kotlin.collections.ArrayList
 
 private val log = KotlinLogging.logger { }
 
@@ -28,10 +29,10 @@ data class TestCaseResponse(val id: Long,
                             val customFields: CustomFields?
                             ) {
 
-    fun isAutomatedByPlatform(platform: String): Boolean {
-        return when (platform.toLowerCase()) {
-            AndroidPlatformName -> customFields?.androidAutomationStatus == AutomationDoneStatus
-            iOSPlatformName -> customFields?.iosAutomationStatus == AutomationDoneStatus
+    fun isAutomationStatusByPlatformSameAs(status: AutomationStatus, platform: String): Boolean {
+        return when (platform.lowercase()) {
+            AndroidPlatformName -> customFields?.androidAutomationStatus == status.name
+            iOSPlatformName -> customFields?.iosAutomationStatus == status.name
             else -> {
                 log.error { "Wrong platform: $platform" }
                 false
@@ -39,10 +40,10 @@ data class TestCaseResponse(val id: Long,
         }
     }
 
-    fun setAutomationDoneForLabel(platform: String) {
+    fun setAutomationStatusForPlatform(status: AutomationStatus?, platform: String) {
         when (platform) {
-            AndroidPlatformName -> customFields?.androidAutomationStatus = AutomationDoneStatus
-            iOSPlatformName -> customFields?.iosAutomationStatus = AutomationDoneStatus
+            AndroidPlatformName -> customFields?.androidAutomationStatus = status?.name
+            iOSPlatformName -> customFields?.iosAutomationStatus = status?.name
             else -> log.error { "Wrong platform: $platform" }
         }
     }
@@ -53,6 +54,10 @@ data class TestCaseResponse(val id: Long,
 const val AutomationDoneStatus = "Done"
 const val AndroidPlatformName = "android"
 const val iOSPlatformName = "ios"
+
+enum class AutomationStatus {
+    Done
+}
 
 data class Owner(val self: String, val accountId: String)
 data class TestScript(val self: String)

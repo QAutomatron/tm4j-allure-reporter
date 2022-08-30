@@ -3,16 +3,18 @@ import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import data.TsmOutput
 import data.XmlCheckerOutput
+import data.tms.AutomationStatus
 import data.tms.StatusType
 import data.tms.TestCasesResponse
 import data.xml.TestSuite
 import mu.KotlinLogging
 import java.io.File
+import kotlin.collections.ArrayList
 
 
 object XmlChecker {
     private val log = KotlinLogging.logger { }
-    private const val maxCaseResults = 2000
+    private const val maxCaseResults = 1900
 
     fun checkXml(
         reportDir: String,
@@ -32,15 +34,17 @@ object XmlChecker {
         val deprecatedStatusId = zephyrClient.getStatuses(
             projectKey,
             statusType = StatusType.TEST_CASE
-        )?.values?.findLast { it.name.toLowerCase() == "deprecated" }?.id
+        )?.values?.findLast { it.name.lowercase() == "deprecated" }?.id
         // Check labels
         when {
             casesResponse == null -> {
                 log.error { "Case list from Jira is empty" }
             }
+
             deprecatedStatusId == null -> {
                 log.error { "Deprecated status id is empty" }
             }
+
             else -> {
                 output.tsm =
                     checkIdsLabelStatusInTsm(
@@ -177,12 +181,21 @@ object XmlChecker {
     ): TsmOutput {
         val tsmOutput = TsmOutput()
         log.info { "Will compare TSM with Code" }
-        casesResponse.values.filter { it.isAutomatedByPlatform(platform) && it.status.id != deprecatedStatusId }
+        casesResponse.values.filter {
+            it.isAutomationStatusByPlatformSameAs(
+                AutomationStatus.Done,
+                platform
+            ) && it.status.id != deprecatedStatusId
+        }
             .forEach { zephyrCase ->
                 val findCase = caseIdPairs.firstOrNull { it.first == zephyrCase.key }
                 val casePairString = "${zephyrCase.key} ${zephyrCase.name}"
                 if (findCase == null) {
                     log.error { "[Missing case in Code]: $casePairString" }
+                    if (updateCases) {
+                        zephyrCase.setAutomationStatusForPlatform(null, platform)
+                        zephyrClient.updateCase(zephyrCase)
+                    }
                     tsmOutput.shouldBeInCode.add(casePairString)
                 }
             }
@@ -196,12 +209,12 @@ object XmlChecker {
                 tsmOutput.shouldBeInZephyr.add(casePairString)
             } else
             // Check missed automation status
-                if (!findCase.isAutomatedByPlatform(platform)) {
+                if (!findCase.isAutomationStatusByPlatformSameAs(AutomationStatus.Done, platform)) {
                     // Save cases with missed labels
                     log.error { "[Missing automation status for $platform]: $casePairString" }
                     tsmOutput.missingStatus.add(casePairString)
                     // Update test case with status
-                    findCase.setAutomationDoneForLabel(platform)
+                    findCase.setAutomationStatusForPlatform(AutomationStatus.Done, platform)
                     // Push updates if enabled
                     if (updateCases) {
                         zephyrClient.updateCase(findCase)
