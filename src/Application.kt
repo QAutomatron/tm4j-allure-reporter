@@ -19,7 +19,7 @@ fun main(args: Array<String>) {
     val reportDir = MainArguments.reportFrom
     val mode = MainArguments.mode
 
-    when (mode.toLowerCase()) {
+    when (mode.lowercase()) {
         "debug" -> {
             log.info { "Debug mode ON. Will not post" }
             return
