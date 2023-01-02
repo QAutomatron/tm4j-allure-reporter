@@ -1,7 +1,7 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-val kotlinVersion = "1.7.10"
+val kotlinVersion = "1.8.0"
 val logbackVersion = "1.4.4"
 val fuelVersion = "2.3.1"
 val kotlinLoggingVersion = "3.0.2"
@@ -52,8 +52,8 @@ dependencies {
     implementation("com.github.kittinunf.fuel:fuel:$fuelVersion")
     implementation("com.github.kittinunf.fuel:fuel-jackson:$fuelVersion")
 
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.4")
-    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.13.4")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.0")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.14.0")
     implementation("com.apurebase:arkenv:$arkenvVersion")
 }
 
