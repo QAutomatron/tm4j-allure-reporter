@@ -1,7 +1,6 @@
 package data.tms
 
 import mu.KotlinLogging
-import kotlin.collections.ArrayList
 
 private val log = KotlinLogging.logger { }
 
@@ -46,6 +45,10 @@ data class TestCaseResponse(val id: Long,
             iOSPlatformName -> customFields?.iosAutomationStatus = status?.name
             else -> log.error { "Wrong platform: $platform" }
         }
+    }
+
+    fun toKeyNameString(): String {
+        return "$key $name"
     }
 }
 /**

@@ -13,7 +13,15 @@ data class TestSuites(
     @get: JacksonXmlProperty(isAttribute = true) val failures: String,
     @get: JacksonXmlProperty(isAttribute = true) val retries: String?,
     @JacksonXmlProperty(localName = "testsuite") val testSuites: ArrayList<TestSuite> = arrayListOf()
-)
+) {
+    internal fun filterIssuesBySuiteName(suiteNameContains: String?): List<TestSuite> {
+        return if (suiteNameContains != null) {
+            this.testSuites.filter { it.name.contains(suiteNameContains) }
+        } else {
+            this.testSuites
+        }
+    }
+}
 
 data class TestSuite(
     @get: JacksonXmlProperty(isAttribute = true) val errors: String?,

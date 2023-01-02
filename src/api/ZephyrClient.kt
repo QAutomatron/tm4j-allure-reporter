@@ -25,20 +25,26 @@ class ZephyrClient(private val apiKey: String) {
      * @param maxResults
      */
     fun getTestCases(projectKey: String, maxResults: Int = 10): TestCasesResponse? {
-        log.info { "Getting cases from TSM" }
+        log.info { "Getting cases from TSM. Limit is $maxResults" }
         val (request, response, result) = Fuel.get("$api/testcases?maxResults=$maxResults&projectKey=$projectKey")
             .authentication().bearer(apiKey)
             .responseObject<TestCasesResponse>()
-        responseHandler(request, response)
+        handleResponse(request, response)
         return result.component1()
     }
 
+    /**
+     * GET /statuses
+     * @param projectKey
+     * @param statusType
+     * @param maxResults
+     */
     fun getStatuses(projectKey: String, statusType: StatusType, maxResults: Int = 10): TestStatusesResponse? {
         log.info { "Getting statuses from TSM" }
         val (request, response, result) = Fuel.get("$api/statuses?maxResults=$maxResults&projectKey=$projectKey&statusType=${statusType.name}")
             .authentication().bearer(apiKey)
             .responseObject<TestStatusesResponse>()
-        responseHandler(request, response)
+        handleResponse(request, response)
         return result.component1()
     }
 
@@ -99,7 +105,7 @@ class ZephyrClient(private val apiKey: String) {
         }
     }
 
-    fun updateCase(updatedCase: TestCaseResponse) {
+    fun updateCase(updatedCase: TestCaseResponse): Boolean {
         log.info { "================================" }
         log.info { "Will update [${updatedCase.key}]" }
         log.debug { mapper.writeValueAsString(updatedCase) }
@@ -109,7 +115,7 @@ class ZephyrClient(private val apiKey: String) {
                 .bearer(apiKey)
             .objectBody(updatedCase)
             .response()
-        responseHandler(request, response)
+        return handleResponse(request, response)
     }
 
     data class TestCasePostResult(
@@ -125,13 +131,18 @@ class ZephyrClient(private val apiKey: String) {
             }
     }
 
-    private fun responseHandler(request: Request, response: Response) {
+    private fun handleResponse(request: Request, response: Response): Boolean {
+        log.info { "Handling [${request.method}] to [${request.url}] [${response.statusCode}]" }
         if (response.isSuccessful) {
-            log.info { "Request ${request.method} to ${request.url} is OK" }
-        } else if (response.isClientError || response.isServerError) {
+            return true
+        }
+        if (response.isClientError || response.isServerError) {
             val error = mapper.readValue(response.body().asString(contentType), ErrorResponse::class.java)
             log.error { "Error updating test case: $error" }
+            return false
         }
+        log.info { "Status is UNKNOWN: [${response.body().asString(contentType)}]" }
+        return false
     }
 
     data class JiraResultRequest(

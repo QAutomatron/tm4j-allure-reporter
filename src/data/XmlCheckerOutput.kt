@@ -4,7 +4,7 @@ data class XmlCheckerOutput(
     val missingIds: ArrayList<String> = arrayListOf(),
 ) {
     var duplicates: String = ""
-    lateinit var tsm: TsmOutput
+    var tsm: TsmOutput = TsmOutput()
 }
 
 data class TsmOutput(
