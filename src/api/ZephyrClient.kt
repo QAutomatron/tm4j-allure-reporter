@@ -24,13 +24,15 @@ class ZephyrClient(private val apiKey: String) {
      * @param projectKey
      * @param maxResults
      */
-    fun getTestCases(projectKey: String, maxResults: Int = 10): TestCasesResponse? {
+    fun getTestCases(projectKey: String, maxResults: Int): TestCasesResponse? {
         log.info { "Getting cases from TSM. Limit is $maxResults" }
         val (request, response, result) = Fuel.get("$api/testcases?maxResults=$maxResults&projectKey=$projectKey")
             .authentication().bearer(apiKey)
             .responseObject<TestCasesResponse>()
         handleResponse(request, response)
-        return result.component1()
+        val testCasesResponse = result.component1()
+        log.info { "Received MaxResult:${testCasesResponse?.maxResults} | Total:${testCasesResponse?.total} | Last: ${testCasesResponse?.isLast}" }
+        return testCasesResponse
     }
 
     /**

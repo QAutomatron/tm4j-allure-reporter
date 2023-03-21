@@ -7,6 +7,7 @@ private val log = KotlinLogging.logger { }
 data class TestCasesResponse(
     val maxResults: Int,
     val total: Int,
+    val isLast: Boolean,
     val values: ArrayList<TestCaseResponse>
 )
 data class IdSelf(val id: Long, val self: String)

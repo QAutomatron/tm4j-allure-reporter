@@ -13,7 +13,7 @@ class XmlChecker(
     private val platform: String,
     private val updateCases: Boolean,
     private val suiteNameShouldContainString: String?,
-    private val maxCaseResultsFromAPI: Int = 2000,
+    private val maxCaseResultsFromAPI: Int,
     private val jsonFileName: String = "zephyr.checker.result.json",
     private val mdFileName: String = "zephyr.checker.result.md"
 ) {

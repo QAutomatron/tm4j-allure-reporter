@@ -42,11 +42,12 @@ fun main(args: Array<String>) {
             Arkenv.parse(XmlArguments, args)
             log.info { "XML Arguments provided: $XmlArguments" }
             val xmlChecker = XmlChecker(
-                reportFile,
-                projectKey,
-                XmlArguments.platform,
-                XmlArguments.updateCases,
-                XmlArguments.suiteNameContains
+                reportFile = reportFile,
+                projectKey = projectKey,
+                platform = XmlArguments.platform,
+                updateCases = XmlArguments.updateCases,
+                maxCaseResultsFromAPI = 3000,
+                suiteNameShouldContainString = XmlArguments.suiteNameContains
             )
             xmlChecker.check()
         }
