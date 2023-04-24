@@ -1,3 +1,5 @@
+import data.CountByStatus
+import data.Coverage
 import data.TsmOutput
 import data.XmlCheckerOutput
 import data.tms.AutomationStatus
@@ -27,12 +29,12 @@ class XmlChecker(
         // Check duplicate ids in test names
         xmlCheckerOutput.duplicates = checkPairsForDuplicates(caseIdNamePairs)
         // Get case list from Zephyr
-        val casesResponse = zephyrClient.getTestCases(projectKey, maxCaseResultsFromAPI)
+        val testCases = zephyrClient.getTestCases(projectKey, maxCaseResultsFromAPI)
         // Get deprecated status id
         initDeprecatedStatusId()
         // Check labels
         when {
-            casesResponse == null -> {
+            testCases == null -> {
                 log.error { "Case list from Jira is empty. Exiting..." }
             }
 
@@ -43,15 +45,35 @@ class XmlChecker(
             else -> {
                 xmlCheckerOutput.tsm =
                     checkIdsLabelStatusInTsm(
-                        casesResponse,
+                        testCases,
                         caseIdNamePairs,
                     )
+                xmlCheckerOutput.coverage = coverageReport(testCases)
             }
         }
+        // Coverage report
         // Output to file
         val reporter = Reporter(xmlCheckerOutput)
         reporter.saveOutputAsJson(jsonFileName)
         reporter.saveOutputAsMD(mdFileName)
+    }
+
+    private fun coverageReport(casesResponse: TestCasesResponse): Coverage {
+        val casesByStatus = arrayListOf<Pair<AutomationStatus, List<TestCaseResponse>>>()
+        val notDeprecated = casesResponse.values.filter { it.status.id != deprecatedStatusId }
+        AutomationStatus.values().forEach { status ->
+            casesByStatus.add(Pair(status, notDeprecated.filter { case ->
+                case.isAutomationStatusByPlatformSameAs(
+                    status,
+                    platform
+                )
+            }))
+        }
+        val byStatus: ArrayList<CountByStatus> = arrayListOf()
+        casesByStatus.forEach { pair ->
+            byStatus.add(CountByStatus(pair.first, pair.second.size))
+        }
+        return Coverage(casesResponse.values.size, notDeprecated.size, byStatus)
     }
 
     private fun initDeprecatedStatusId() {
