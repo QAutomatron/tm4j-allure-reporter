@@ -1,7 +1,4 @@
-import data.CountByStatus
-import data.Coverage
-import data.TsmOutput
-import data.XmlCheckerOutput
+import data.*
 import data.tms.AutomationStatus
 import data.tms.StatusType
 import data.tms.TestCaseResponse
@@ -48,7 +45,7 @@ class XmlChecker(
                         testCases,
                         caseIdNamePairs,
                     )
-                xmlCheckerOutput.coverage = coverageReport(testCases)
+                xmlCheckerOutput.coverageReport = coverageReport(testCases)
             }
         }
         // Coverage report
@@ -58,23 +55,53 @@ class XmlChecker(
         reporter.saveOutputAsMD(mdFileName)
     }
 
-    private fun coverageReport(casesResponse: TestCasesResponse): Coverage {
-        val casesByStatus = arrayListOf<Pair<AutomationStatus, List<TestCaseResponse>>>()
+    private fun coverageReport(casesResponse: TestCasesResponse): CoverageReport {
+        val casesByStatusMap = mutableMapOf<AutomationStatus, List<TestCaseResponse>>()
         val notDeprecated = casesResponse.values.filter { it.status.id != deprecatedStatusId }
         AutomationStatus.values().forEach { status ->
-            casesByStatus.add(Pair(status, notDeprecated.filter { case ->
+            casesByStatusMap[status] = notDeprecated.filter { case ->
                 case.isAutomationStatusByPlatformSameAs(
                     status,
                     platform
                 )
-            }))
+            }
         }
-        val byStatus: ArrayList<CountByStatus> = arrayListOf()
-        casesByStatus.forEach { pair ->
-            byStatus.add(CountByStatus(pair.first, pair.second.size))
-        }
-        return Coverage(casesResponse.values.size, notDeprecated.size, byStatus)
+        val notDeprecatedCount = notDeprecated.size
+        val automatedCount = casesByStatusMap[AutomationStatus.Done]!!.size
+        val notAutomatedCount = casesByStatusMap[AutomationStatus.None]!!.size
+        val wontCount = casesByStatusMap[AutomationStatus.Wont]!!.size
+        val duplicateCount = casesByStatusMap[AutomationStatus.Duplicate]!!.size
+        val deprecatedCount = casesByStatusMap[AutomationStatus.Deprecated]!!.size
+        val totalWont = wontCount + duplicateCount + deprecatedCount
+        val totalCanBe = notDeprecatedCount - totalWont
+        val notAutomatedPercentageFromCanBe = stringFormat(notAutomatedCount.toDouble() / totalCanBe * 100, 2)
+        val notAutomatedPercentageFromTotal = stringFormat(notAutomatedCount.toDouble() / notDeprecatedCount * 100, 2)
+        val totalWontPercentage = stringFormat(totalWont.toDouble() / notDeprecatedCount * 100, 2)
+        log.debug { "Total wont $totalWont[$totalWontPercentage]" }
+        val totalCanBePercentage = stringFormat(totalCanBe.toDouble() / notDeprecatedCount * 100, 2)
+        log.debug { "Total can be automated $totalCanBe[$totalCanBePercentage]" }
+        val automatedFromTotal = stringFormat((automatedCount.toDouble() / notDeprecatedCount) * 100, 2)
+        val automatedFromCanBe = stringFormat((automatedCount.toDouble() / totalCanBe) * 100, 2)
+        log.debug { "Automated $automatedCount[$automatedFromCanBe]. From total $automatedFromTotal" }
+        log.debug { "Not automated $notAutomatedCount[$notAutomatedPercentageFromCanBe]. From total $notAutomatedPercentageFromTotal" }
+        val countByStatus = mutableMapOf<AutomationStatus, Int>()
+        casesByStatusMap.forEach { (key, value) -> countByStatus[key] = value.size }
+        return CoverageReport(
+            total = casesResponse.values.size,
+            notDeprecated = notDeprecated.size,
+            coveragePercentage = Coverage(
+                totalWontPercentage = totalWontPercentage,
+                totalCanBePercentage = totalCanBePercentage,
+                automatedFromCanBe = automatedFromCanBe,
+                automatedFromTotal = automatedFromTotal,
+                notAutomatedPercentageFromCanBe = notAutomatedPercentageFromCanBe,
+                notAutomatedFromTotal = notAutomatedPercentageFromTotal
+            ),
+            countByStatuses = countByStatus
+        )
     }
+
+    private fun stringFormat(input: Double, scale: Int) = "%.${scale}f".format(input)
 
     private fun initDeprecatedStatusId() {
         deprecatedStatusId = zephyrClient.getStatuses(
